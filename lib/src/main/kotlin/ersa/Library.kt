@@ -5,20 +5,105 @@ package ersa
 
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
+import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.request
+import io.ktor.client.statement.HttpResponse
+import io.ktor.http.HttpMethod
+import io.ktor.http.URLProtocol
+import io.ktor.http.path
+import io.github.oshai.kotlinlogging.KotlinLogging
+import io.ktor.client.request.parameter
+import io.ktor.client.request.setBody
 
-class Courrier(val scheme: String = "https", val host: String, val apiKey: String?=null) {
-    val client = HttpClient(CIO)
-    init {
 
+class Courrier(private val scheme: String = "https", private val _host: String) {
+    private val client = HttpClient(CIO)
+    private var userAgent: String = "ersa-android"
+    private var contentType: String = "application/json"
+    private var accept: String = "application/json"
+    private var connection: String = "keep-alive"
+    private val logger = KotlinLogging.logger {}
+
+    suspend fun request(endpoint: Endpoint, method: Method, body: Any?=null, headers: Map<String, String>?=null) : HttpResponse {
+
+        // set http method
+        val requestBuilder = HttpRequestBuilder()
+        when (method) {
+            Method.GET -> requestBuilder.method = HttpMethod.Get
+            Method.POST -> {
+                requestBuilder.method = HttpMethod.Post
+                requestBuilder.setBody(body)
+            }
+            Method.PUT -> {
+                requestBuilder.method = HttpMethod.Put
+                requestBuilder.setBody(body)
+            }
+            Method.DELETE -> requestBuilder.method = HttpMethod.Delete
+        }
+        requestBuilder.url {
+            protocol = if (scheme == "https") {
+                URLProtocol.HTTPS
+            } else {
+                URLProtocol.HTTP
+            }
+            host = _host
+            path(endpoint.path)
+        }
+
+        // set headers
+        requestBuilder.headers.append("User-Agent", userAgent)
+        requestBuilder.headers.append("Content-Type", contentType)
+        requestBuilder.headers.append("Accept", accept)
+        requestBuilder.headers.append("Connection", connection)
+        if (endpoint.queryItems != null) {
+            for(item in endpoint.queryItems) {
+                requestBuilder.parameter(item.key, item.value)
+            }
+        }
+        if (headers != null) {
+            for ((key, value) in headers) {
+                requestBuilder.headers.append(key, value)
+            }
+        }
+
+        logger.info { "Making a ${requestBuilder.method} request to ${endpoint.path}" }
+
+        return client.request(requestBuilder)
     }
 
-    private fun handleHttpError(){}
+    suspend fun upload(endpoint: Endpoint, fileName: String, fileType: String, data: Any, headers: Map<String, String>?=null) : HttpResponse {
+        // set http method
+        val requestBuilder = HttpRequestBuilder()
+        requestBuilder.method = HttpMethod.Post
+        requestBuilder.url {
+            protocol = if (scheme == "https") {
+                URLProtocol.HTTPS
+            } else {
+                URLProtocol.HTTP
+            }
+            host = _host
+            path(endpoint.path)
+        }
 
-    private fun _request(){}
+        // set headers
+        requestBuilder.headers.append("User-Agent", userAgent)
+        requestBuilder.headers.append("Accept", accept)
+        requestBuilder.headers.append("Connection", connection)
+        requestBuilder.headers.append("X-Filename", fileName+fileType)
+        when(fileType) {
+            ".jpeg" -> { requestBuilder.headers.append("Content-Type", "image/jpeg") }
+            ".heic" -> { requestBuilder.headers.append("Content-Type", "image/heic") }
+            else -> { requestBuilder.headers.append("Content-Type", "application/octet-stream") }
+        }
+        if (headers != null) {
+            for ((key, value) in headers) {
+                requestBuilder.headers.append(key, value)
+            }
+        }
+        requestBuilder.setBody(data)
 
-    public fun request(){}
+        logger.info { "Making a ${requestBuilder.method} request to ${endpoint.path}" }
 
-    private fun _upload(){}
-
-    public fun upload(){}
+        return client.request(requestBuilder)
+    }
 }

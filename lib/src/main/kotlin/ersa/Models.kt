@@ -1,8 +1,8 @@
 package ersa
 
-public class Endpoint(path: String, queryItems: QueryItem<Any>) {}
+class Endpoint(val path: String, val queryItems: List<QueryItem<Any>>?=null)
 
-public class QueryItem<T>(key: String, value: T) {}
+class QueryItem<T>(val key: String, val value: T)
 
 enum class Method {
     GET,

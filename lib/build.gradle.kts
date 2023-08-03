@@ -36,6 +36,11 @@ dependencies {
     // ktor
     implementation("io.ktor:ktor-client-core:2.3.2")
     implementation("io.ktor:ktor-client-cio:2.3.2")
+
+    // logger
+    implementation ("io.github.oshai:kotlin-logging-jvm:5.0.1")
+    implementation ("org.slf4j:slf4j-api:1.7.30")
+    implementation ("org.slf4j:slf4j-simple:1.7.30")
 }
 
 // Apply a specific Java toolchain to ease working on different environments.

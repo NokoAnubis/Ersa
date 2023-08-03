@@ -3,12 +3,76 @@
  */
 package ersa
 
+import io.ktor.client.call.body
+import io.ktor.http.HttpStatusCode
 import kotlin.test.Test
+import kotlinx.coroutines.runBlocking
 import kotlin.test.assertTrue
 
 class LibraryTest {
-    @Test fun someLibraryMethodReturnsTrue() {
-        val classUnderTest = Courrier(host = "https://httbin.org")
-
+    @Test
+    fun testHttpGet() = runBlocking {
+        val classUnderTest = Courrier(_host = "httpbin.org")
+        val endpoint = Endpoint("/get")
+        val response = classUnderTest.request(endpoint, method = Method.GET)
+        val bodyString: String = response.body()
+        val headers = response.headers
+        println(headers)
+        println(bodyString)
+        assertTrue {
+            response.status == HttpStatusCode.OK
+        }
+    }
+    @Test
+    fun testHttpGetParams() = runBlocking {
+        val classUnderTest = Courrier(_host = "httpbin.org")
+        val endpoint = Endpoint("/get", queryItems = listOf(QueryItem("radius", 1000)))
+        val response = classUnderTest.request(endpoint, method = Method.GET)
+        val bodyString: String = response.body()
+        val headers = response.headers
+        println(headers)
+        println(bodyString)
+        assertTrue {
+            response.status == HttpStatusCode.OK
+        }
+    }
+    @Test
+    fun testHttpPost() = runBlocking {
+        val classUnderTest = Courrier(_host = "httpbin.org")
+        val jsonObjectString = """
+        {
+            "name": "John Doe",
+            "age": 30,
+            "email": "john.doe@example.com",
+            "isMarried": false,
+            "address": {
+                "city": "New York",
+                "zipcode": "10001"
+            },
+            "hobbies": ["reading", "swimming", "traveling"]
+        }
+    """.trimIndent()
+        val endpoint = Endpoint("/post")
+        val response = classUnderTest.request(endpoint, method = Method.POST, body = jsonObjectString)
+        val bodyString: String = response.body()
+        val headers = response.headers
+        println(headers)
+        println(bodyString)
+        assertTrue {
+            response.status == HttpStatusCode.OK
+        }
+    }
+    @Test
+    fun testUpload() = runBlocking {
+        val classUnderTest = Courrier(_host = "httpbin.org")
+        val endpoint = Endpoint("/post")
+        val response = classUnderTest.upload(endpoint, fileName = "testfile", fileType = ".jpeg", data = "")
+        val bodyString: String = response.body()
+        val headers = response.headers
+        println(headers)
+        println(bodyString)
+        assertTrue {
+            response.status == HttpStatusCode.OK
+        }
     }
 }
