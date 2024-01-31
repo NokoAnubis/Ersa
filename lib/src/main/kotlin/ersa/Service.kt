@@ -3,8 +3,8 @@
  */
 package ersa
 
-import io.ktor.client.*
 import io.ktor.client.engine.cio.*
+import io.ktor.client.*
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.request
 import io.ktor.client.statement.HttpResponse
@@ -16,15 +16,15 @@ import io.ktor.client.request.parameter
 import io.ktor.client.request.setBody
 
 
-class Courrier(private val scheme: String = "https", private val _host: String) {
+class Courrier(private val scheme: Scheme = Scheme.HTTPS, private val _host: String) {
     private val client = HttpClient(CIO)
-    private var userAgent: String = "ersa-android"
+    private var userAgent: String = "ersa"
     private var contentType: String = "application/json"
     private var accept: String = "application/json"
     private var connection: String = "keep-alive"
     private val logger = KotlinLogging.logger {}
 
-    suspend fun request(endpoint: Endpoint, method: Method, body: Any?=null, headers: Map<String, String>?=null) : HttpResponse {
+    suspend fun request(endpoint: Endpoint, method: Method, body: Any?="", headers: Map<String, String>?=null) : HttpResponse {
 
         // set http method
         val requestBuilder = HttpRequestBuilder()
@@ -40,11 +40,11 @@ class Courrier(private val scheme: String = "https", private val _host: String) 
             }
             Method.DELETE -> requestBuilder.method = HttpMethod.Delete
         }
+
         requestBuilder.url {
-            protocol = if (scheme == "https") {
-                URLProtocol.HTTPS
-            } else {
-                URLProtocol.HTTP
+            protocol = when (scheme) {
+                Scheme.HTTP -> URLProtocol.HTTP
+                Scheme.HTTPS -> URLProtocol.HTTPS
             }
             host = _host
             path(endpoint.path)
@@ -66,20 +66,19 @@ class Courrier(private val scheme: String = "https", private val _host: String) 
             }
         }
 
-        logger.info { "Making a ${requestBuilder.method} request to ${endpoint.path}" }
+        logger.info { "Making a ${requestBuilder.method.value} request to ${endpoint.path}" }
 
         return client.request(requestBuilder)
     }
 
-    suspend fun upload(endpoint: Endpoint, fileName: String, fileType: String, data: Any, headers: Map<String, String>?=null) : HttpResponse {
+    suspend fun upload(endpoint: Endpoint, fileName: String, fileType: FileType, data: Any, headers: Map<String, String>?=null) : HttpResponse {
         // set http method
         val requestBuilder = HttpRequestBuilder()
         requestBuilder.method = HttpMethod.Post
         requestBuilder.url {
-            protocol = if (scheme == "https") {
-                URLProtocol.HTTPS
-            } else {
-                URLProtocol.HTTP
+            protocol = when (scheme) {
+                Scheme.HTTP -> URLProtocol.HTTP
+                Scheme.HTTPS -> URLProtocol.HTTPS
             }
             host = _host
             path(endpoint.path)
@@ -89,10 +88,17 @@ class Courrier(private val scheme: String = "https", private val _host: String) 
         requestBuilder.headers.append("User-Agent", userAgent)
         requestBuilder.headers.append("Accept", accept)
         requestBuilder.headers.append("Connection", connection)
-        requestBuilder.headers.append("X-Filename", fileName+fileType)
+        requestBuilder.headers.append("X-Filename", fileName)
+
         when(fileType) {
-            ".jpeg" -> { requestBuilder.headers.append("Content-Type", "image/jpeg") }
-            ".heic" -> { requestBuilder.headers.append("Content-Type", "image/heic") }
+            FileType.JPEG, FileType.JPG -> { requestBuilder.headers.append("Content-Type", "image/jpeg") }
+            FileType.HEIC -> { requestBuilder.headers.append("Content-Type", "image/heic") }
+            FileType.PNG -> { requestBuilder.headers.append("Content-Type", "image/png") }
+            FileType.WEBP -> { requestBuilder.headers.append("Content-Type", "image/webp") }
+            FileType.MP3 -> { requestBuilder.headers.append("Content-Type", "audio/mpeg") }
+            FileType.WEBA -> { requestBuilder.headers.append("Content-Type", "audio/webm") }
+            FileType.MP4 -> { requestBuilder.headers.append("Content-Type", "video/mp4") }
+            FileType.WEBM -> { requestBuilder.headers.append("Content-Type", "video/webm") }
             else -> { requestBuilder.headers.append("Content-Type", "application/octet-stream") }
         }
         if (headers != null) {
@@ -102,7 +108,7 @@ class Courrier(private val scheme: String = "https", private val _host: String) 
         }
         requestBuilder.setBody(data)
 
-        logger.info { "Making a ${requestBuilder.method} request to ${endpoint.path}" }
+        logger.info { "Making a ${requestBuilder.method.value} request to ${endpoint.path}" }
 
         return client.request(requestBuilder)
     }

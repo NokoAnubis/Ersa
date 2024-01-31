@@ -7,8 +7,7 @@
 
 plugins {
     // Apply the org.jetbrains.kotlin.jvm Plugin to add support for Kotlin.
-    id("org.jetbrains.kotlin.jvm") version "1.8.20"
-
+    kotlin("jvm") version "1.9.0"
     // Apply the java-library plugin for API and implementation separation.
     `java-library`
 }
@@ -41,6 +40,11 @@ dependencies {
     implementation ("io.github.oshai:kotlin-logging-jvm:5.0.1")
     implementation ("org.slf4j:slf4j-api:1.7.30")
     implementation ("org.slf4j:slf4j-simple:1.7.30")
+
+    // kotlinx
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
+    testImplementation ("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.0-RC2")
+
 }
 
 // Apply a specific Java toolchain to ease working on different environments.
@@ -49,6 +53,7 @@ java {
         languageVersion.set(JavaLanguageVersion.of(17))
     }
 }
+
 
 tasks.named<Test>("test") {
     // Use JUnit Platform for unit tests.
